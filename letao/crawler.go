@@ -14,6 +14,7 @@ type Filter struct {
 }
 
 type AuctionItem struct {
+	URL      string // 商品連結
 	ImageURL string // 商品圖片連結
 	Title    string // 商品標題
 	PriceMP  string // 價格資訊(mp)
@@ -21,6 +22,10 @@ type AuctionItem struct {
 	BidsInfo string // 出價資訊
 	TimeInfo string // 時間資訊
 }
+
+var (
+	searhFinalLink = ""
+)
 
 func LetaoCrawler(baseURL string, filter Filter) ([]AuctionItem, error) {
 	// Limit viewcount to maximum 40
@@ -48,13 +53,35 @@ func LetaoCrawler(baseURL string, filter Filter) ([]AuctionItem, error) {
 	}
 
 	var items []AuctionItem
+	shouldStop := false
+	setURL := true
 
 	doc.Find("div.item").Each(func(i int, s *goquery.Selection) {
+		if shouldStop {
+			return
+		}
+
 		href, exists := s.Find("div.imgInfo a").First().Attr("href")
+		// filter non-product tags
+		if !exists || strings.TrimSpace(href) == "" {
+			return
+		}
+		href = "https:" + href
+
+		if searhFinalLink != "" && href == searhFinalLink {
+			shouldStop = true
+			return
+		}
+
+		if setURL {
+			searhFinalLink = href
+			setURL = false
+		}
+
+		imgHref, exists := s.Find("div.imgInfo a img").First().Attr("src")
 		if !exists {
 			return // Skip items without link
 		}
-
 		// Get title text
 		title := strings.TrimSpace(s.Find("div.titleInfo div.title a").First().Text())
 
@@ -70,7 +97,8 @@ func LetaoCrawler(baseURL string, filter Filter) ([]AuctionItem, error) {
 
 		// Create auction item
 		item := AuctionItem{
-			ImageURL: href,
+			URL:      href,
+			ImageURL: imgHref,
 			Title:    title,
 			PriceMP:  priceMP,
 			PriceM:   priceM,
