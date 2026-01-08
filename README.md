@@ -15,7 +15,11 @@ cd kurobidder
 
 ```bash
 go get github.com/PuerkitoBio/goquery
+go get github.com/kuro-helper/kurohelper-proxy
 ```
+
+> [!NOTICE]
+> 本專案有使用到 kurohelper-proxy 模組來做代理伺服器
 
 ### 3. 在目標專案中使用 replace
 
